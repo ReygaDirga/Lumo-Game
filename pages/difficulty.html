@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lumo</title>
+  <link rel="stylesheet" href="../css/index.css">
+  <link rel="icon" type="image/png" href="../assets/Lumo.png">
+  <script>
+    function goPage(page) {
+        window.location.href = page;
+    }
+  </script>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+
+  <div class="menu">
+    <h1>SELECT DIFFICULTY</h1>
+    <ul>
+      <li onclick="goPage('easy.html')">EASY</li>
+      <li onclick="goPage('medium.html')">MEDIUM</li>
+      <li onclick="goPage('hard.html')">HARD</li>
+    </ul>
+    <p class="desc">
+      Choose your challenge level. Each mode changes the number of polarizers, 
+      speed progression, and power-ups availability. Good luck!
+    </p>
+  </div>
+
+  <script src="../js/index.js"></script>
+</body>
+</html>
