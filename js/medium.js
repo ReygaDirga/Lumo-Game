@@ -175,12 +175,22 @@ function render(){
   ctx.globalAlpha=1;
 
   // polarizer
-  for (let ob of gameState.obstacles){
+for (let ob of gameState.obstacles){
     ctx.save();
     ctx.translate(ob.x+ob.width/2, ob.y+ob.height/2);
     ctx.rotate(degToRad(ob.targetAngle));
     ctx.fillStyle = "rgba(255,255,255,0.15)";
     ctx.fillRect(-ob.width/2, -ob.height/2, ob.width, ob.height);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-ob.width/2, 0);   // dari kiri ke kanan
+    ctx.lineTo(ob.width/2, 0);
+    ctx.beginPath();
+    ctx.moveTo(ob.width/2 - 10, -5);
+    ctx.lineTo(ob.width/2, 0);
+    ctx.lineTo(ob.width/2 - 10, 5);
+    ctx.stroke();
     ctx.restore();
   }
 
