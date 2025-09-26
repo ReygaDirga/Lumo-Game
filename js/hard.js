@@ -1,11 +1,19 @@
 const lumoImg = new Image();
 lumoImg.src = "../assets/Lumo.png";
 
-// Powerup icons
-const heartImg = new Image(); heartImg.src = "../assets/heart.png";
-const shieldImg = new Image(); shieldImg.src = "../assets/shield.png";
-const slowImg = new Image(); slowImg.src = "../assets/slow.png";
-const fragmentImg = new Image(); fragmentImg.src = "../assets/fragment.png";
+// Load powerup icons
+const heartImg = new Image();
+heartImg.src = "../assets/heart.png";
+
+const shieldImg = new Image();
+shieldImg.src = "../assets/shield.png";
+
+const slowImg = new Image();
+slowImg.src = "../assets/slow.png";
+
+const fragmentImg = new Image();
+fragmentImg.src = "../assets/fragment.png";
+
 
 /* ---------------- STARFIELD BG ---------------- */
 const bg = document.getElementById("bg");
@@ -63,13 +71,14 @@ const scoreEl = document.getElementById("score");
 const speedEl = document.getElementById("speed");
 const livesEl = document.getElementById("lives");
 const fragmentsEl = document.getElementById("fragments");
+const shieldStatusEl = document.getElementById("shieldStatus");
 
 /* ---------------- SPAWN ---------------- */
 function spawnPolarizers(){
   let arr = [];
   let lanes = [...Array(laneCount).keys()];
   lanes.sort(() => Math.random() - 0.5);
-  let chosen = lanes.slice(0, 7); // lebih banyak polarizer
+  let chosen = lanes.slice(0, 7);
   for (let lane of chosen){
     const targetAngle = Math.floor(Math.random() * 180);
     const tolerance = 25;
@@ -107,13 +116,22 @@ window.addEventListener("keyup", (e)=>{ keys[e.key]=false; });
 function update(){
   if (!gameState.running) return;
   const elapsed = Math.floor((Date.now()-gameState.startTime)/1000);
-  gameState.speed = 6 + Math.floor(elapsed/5) * 1.5; 
+  let baseSpeed = 12 + Math.floor(elapsed/5) * 5;
+
+  // kalau slow masih aktif
+  if (Date.now() < gameState.slowTimer) {
+    gameState.speed = Math.max(3, baseSpeed - gameState.slowEffect);
+  } else {
+    gameState.speed = baseSpeed;
+  }
+
+  gameState.speed = Math.min(gameState.speed, 60);
 
   gameState.spawnTimer++;
   if (gameState.spawnTimer >= gameState.spawnInterval){
     gameState.spawnTimer = 0;
     gameState.obstacles.push(...spawnPolarizers());
-    if (Math.random()<0.25) gameState.powerups.push(spawnPowerup());
+    if (Math.random()<0.4) gameState.powerups.push(spawnPowerup());
   }
 
   for (let ob of gameState.obstacles) ob.x -= 3 * (gameState.speed/5);
@@ -149,7 +167,10 @@ function update(){
     if (photon.lane===p.lane && Math.abs(photon.x-p.x)<30){
       if (p.type==="heart" && gameState.lives<3) gameState.lives++;
       if (p.type==="shield") gameState.shield=true;
-      if (p.type==="slow") gameState.speed=Math.max(3, gameState.speed-2);
+      if (p.type==="slow") {
+        gameState.slowEffect = 5;              // easy: kurangi 5 speed
+        gameState.slowTimer = Date.now() + 10000; // efek bertahan 10 detik
+      }
       if (p.type==="fragment") gameState.fragments++;
       p.x=-999;
     }
@@ -159,6 +180,7 @@ function update(){
   speedEl.textContent = "Speed: " + gameState.speed;
   livesEl.textContent = "❤️".repeat(gameState.lives);
   fragmentsEl.textContent = "Fragments: " + gameState.fragments;
+  shieldStatusEl.textContent = "Shield: " + (gameState.shield ? "ON" : "OFF");
 }
 
 /* ---------------- RENDER ---------------- */
@@ -175,7 +197,7 @@ function render(){
   ctx.globalAlpha=1;
 
   // polarizer
-  for (let ob of gameState.obstacles){
+for (let ob of gameState.obstacles){
     ctx.save();
     ctx.translate(ob.x+ob.width/2, ob.y+ob.height/2);
     ctx.rotate(degToRad(ob.targetAngle));
@@ -193,30 +215,58 @@ function render(){
     ctx.stroke();
     ctx.restore();
   }
-
   // powerups
-  for (let p of gameState.powerups){
-    let img = null;
-    if (p.type === "heart") img = heartImg;
-    if (p.type === "shield") img = shieldImg;
-    if (p.type === "slow") img = slowImg;
-    if (p.type === "fragment") img = fragmentImg;
+for (let p of gameState.powerups){
+  let img = null;
 
-    if (img && img.complete) {
-      ctx.drawImage(img, p.x - p.size/2, p.y - p.size/2, p.size, p.size);
-    }
+  if (p.type === "heart") img = heartImg;
+  if (p.type === "shield") img = shieldImg;
+  if (p.type === "slow") img = slowImg;
+  if (p.type === "fragment") img = fragmentImg;
+
+  if (img && img.complete) {
+    ctx.drawImage(
+      img,
+      p.x - p.size/2,
+      p.y - p.size/2,
+      p.size,
+      p.size
+    );
+  } else {
+    // fallback kalau icon belum ke-load
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size/2, 0, Math.PI*2);
+    ctx.fill();
   }
+}
 
   // === Lumo UFO ===
   ctx.save();
-  const floatY = Math.sin(Date.now()/300) * 3;
+  const floatY = Math.sin(Date.now()/300) * 3; // efek goyang
   ctx.translate(photon.x, photon.y + floatY);
   ctx.rotate(degToRad(photon.polarization));
 
-  ctx.drawImage(lumoImg, -photon.radius*2, -photon.radius*2, photon.radius*4, photon.radius*4);
+  // gambar UFO
+  ctx.drawImage(
+    lumoImg,
+    -photon.radius*2,   // geser kiri biar pusat pas
+    -photon.radius*2,   // geser atas biar pusat pas
+    photon.radius*4,    // lebar
+    photon.radius*4     // tinggi
+  );
+
+  // indikator arah (garis putih tipis)
+//   ctx.strokeStyle = "white";
+//   ctx.lineWidth = 2;
+//   ctx.beginPath();
+//   ctx.moveTo(0,0);
+//   ctx.lineTo(photon.radius*2.5,0);
+//   ctx.stroke();
 
   ctx.restore();
 }
+
 
 /* ---------------- LOOP ---------------- */
 function loop(){
@@ -236,15 +286,17 @@ function resetGame(){
   gameState={
     running:true,
     score:0,
-    speed:7,
+    speed:5,
     fragments:0,
     spawnTimer:0,
-    spawnInterval:120,
+    spawnInterval:160,
     obstacles:[],
     powerups:[],
     lives:3,
     shield:false,
-    startTime:Date.now()
+    startTime:Date.now(),
+    slowEffect:0,
+    slowTimer:0
   };
   photon={
     lane:3,
@@ -256,6 +308,7 @@ function resetGame(){
   };
   document.getElementById("gameOverScreen").style.display="none";
 }
+
 document.getElementById("restartBtn").addEventListener("click", resetGame);
 document.getElementById("menuBtn").addEventListener("click", ()=>{ window.location.href="../index.html"; });
 

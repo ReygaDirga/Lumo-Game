@@ -71,6 +71,7 @@ const scoreEl = document.getElementById("score");
 const speedEl = document.getElementById("speed");
 const livesEl = document.getElementById("lives");
 const fragmentsEl = document.getElementById("fragments");
+const shieldStatusEl = document.getElementById("shieldStatus");
 
 /* ---------------- SPAWN ---------------- */
 function spawnPolarizers(){
@@ -115,7 +116,16 @@ window.addEventListener("keyup", (e)=>{ keys[e.key]=false; });
 function update(){
   if (!gameState.running) return;
   const elapsed = Math.floor((Date.now()-gameState.startTime)/1000);
-  gameState.speed = 5 + Math.floor(elapsed/10);
+  let baseSpeed = 6 + Math.floor(elapsed/5) * 1.5;
+
+  // kalau slow masih aktif
+  if (Date.now() < gameState.slowTimer) {
+    gameState.speed = Math.max(3, baseSpeed - gameState.slowEffect);
+  } else {
+    gameState.speed = baseSpeed;
+  }
+
+  gameState.speed = Math.min(gameState.speed, 40);
 
   gameState.spawnTimer++;
   if (gameState.spawnTimer >= gameState.spawnInterval){
@@ -157,7 +167,10 @@ function update(){
     if (photon.lane===p.lane && Math.abs(photon.x-p.x)<30){
       if (p.type==="heart" && gameState.lives<3) gameState.lives++;
       if (p.type==="shield") gameState.shield=true;
-      if (p.type==="slow") gameState.speed=Math.max(3, gameState.speed-2);
+      if (p.type==="slow") {
+        gameState.slowEffect = 2;              // easy: kurangi 2 speed
+        gameState.slowTimer = Date.now() + 3000; // efek bertahan 5 detik
+      }
       if (p.type==="fragment") gameState.fragments++;
       p.x=-999;
     }
@@ -167,6 +180,7 @@ function update(){
   speedEl.textContent = "Speed: " + gameState.speed;
   livesEl.textContent = "❤️".repeat(gameState.lives);
   fragmentsEl.textContent = "Fragments: " + gameState.fragments;
+  shieldStatusEl.textContent = "Shield: " + (gameState.shield ? "ON" : "OFF");
 }
 
 /* ---------------- RENDER ---------------- */
@@ -280,7 +294,9 @@ function resetGame(){
     powerups:[],
     lives:3,
     shield:false,
-    startTime:Date.now()
+    startTime:Date.now(),
+    slowEffect:0,
+    slowTimer:0
   };
   photon={
     lane:3,
@@ -292,6 +308,7 @@ function resetGame(){
   };
   document.getElementById("gameOverScreen").style.display="none";
 }
+
 document.getElementById("restartBtn").addEventListener("click", resetGame);
 document.getElementById("menuBtn").addEventListener("click", ()=>{ window.location.href="../index.html"; });
 
