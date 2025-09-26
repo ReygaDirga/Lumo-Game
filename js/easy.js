@@ -278,12 +278,12 @@ for (let p of gameState.powerups){
   );
 
   // indikator arah (garis putih tipis)
-//   ctx.strokeStyle = "white";
-//   ctx.lineWidth = 2;
-//   ctx.beginPath();
-//   ctx.moveTo(0,0);
-//   ctx.lineTo(photon.radius*2.5,0);
-//   ctx.stroke();
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(photon.radius*2.5,0);
+  ctx.stroke();
 
   ctx.restore();
 }
