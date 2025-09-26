@@ -32,6 +32,17 @@ let stars = Array.from({length: 150}, () => ({
   speed: 1 + Math.random() * 2
 }));
 
+function showEnding(){
+  gameState.running = false;
+  document.getElementById("endingScreen").style.display = "block";
+}
+
+function restartJourney(){
+  localStorage.setItem("fragments", 0); // reset total fragment
+  resetGame();
+  document.getElementById("endingScreen").style.display = "none";
+}
+
 function animateBG() {
   bgCtx.fillStyle = "rgba(0,0,20,1)";
   bgCtx.fillRect(0,0,bg.width,bg.height);
@@ -171,7 +182,17 @@ function update(){
         gameState.slowEffect = 3;              // easy: kurangi 3 speed
         gameState.slowTimer = Date.now() + 6000; // efek bertahan 6 detik
       }
-      if (p.type==="fragment") gameState.fragments++;
+      if (p.type==="fragment") {
+      gameState.fragments++;
+      localStorage.setItem("fragments", gameState.fragments); // simpan progress
+
+      // ⬇️ cek kalau sudah 100
+      if (gameState.fragments >= 100) {
+          gameState.fragments = 100;
+          localStorage.setItem("f ragments", 100);
+          showEnding(); // panggil popup ending
+        }
+      }
       p.x=-999;
     }
   }
@@ -179,7 +200,7 @@ function update(){
   scoreEl.textContent = "Score: " + gameState.score;
   speedEl.textContent = "Speed: " + gameState.speed;
   livesEl.textContent = "❤️".repeat(gameState.lives);
-  fragmentsEl.textContent = "Fragments: " + gameState.fragments;
+  fragmentsEl.textContent = "Fragments: " + gameState.fragments + " / 100";
   shieldStatusEl.textContent = "Shield: " + (gameState.shield ? "ON" : "OFF");
 }
 
@@ -283,11 +304,13 @@ function gameOver(){
 
 /* ---------------- RESET ---------------- */
 function resetGame(){
-  gameState={
+  const savedFragments = parseInt(localStorage.getItem("fragments")) || 0;
+
+  gameState = {
     running:true,
     score:0,
     speed:5,
-    fragments:0,
+    fragments:savedFragments,   // ambil dari localStorage
     spawnTimer:0,
     spawnInterval:160,
     obstacles:[],
@@ -310,7 +333,9 @@ function resetGame(){
 }
 
 document.getElementById("restartBtn").addEventListener("click", resetGame);
-document.getElementById("menuBtn").addEventListener("click", ()=>{ window.location.href="../index.html"; });
+document.getElementById("menuBtn").addEventListener("click", ()=>{
+  window.location.href="difficulty.html";  
+});
 
 resetGame();
 loop();
