@@ -1,7 +1,6 @@
 const lumoImg = new Image();
 lumoImg.src = "../assets/Lumo.png";
 
-// Load powerup icons
 const heartImg = new Image();
 heartImg.src = "../assets/heart.png";
 
@@ -14,8 +13,6 @@ slowImg.src = "../assets/slow.png";
 const fragmentImg = new Image();
 fragmentImg.src = "../assets/fragment.png";
 
-
-/* ---------------- STARFIELD BG ---------------- */
 const bg = document.getElementById("bg");
 const bgCtx = bg.getContext("2d");
 function resizeBG() {
@@ -38,7 +35,7 @@ function showEnding(){
 }
 
 function restartJourney(){
-  localStorage.setItem("fragments", 0); // reset total fragment
+  localStorage.setItem("fragments", 0); 
   resetGame();
   document.getElementById("endingScreen").style.display = "none";
 }
@@ -63,7 +60,6 @@ function animateBG() {
 }
 animateBG();
 
-/* ---------------- GAME CANVAS ---------------- */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 canvas.width = canvas.clientWidth;
@@ -84,7 +80,6 @@ const livesEl = document.getElementById("lives");
 const fragmentsEl = document.getElementById("fragments");
 const shieldStatusEl = document.getElementById("shieldStatus");
 
-/* ---------------- SPAWN ---------------- */
 function spawnPolarizers(){
   let arr = [];
   let lanes = [...Array(laneCount).keys()];
@@ -111,7 +106,6 @@ function spawnPowerup(){
   return { type, x, y, size, lane };
 }
 
-/* ---------------- INPUT ---------------- */
 let keys = {};
 window.addEventListener("keydown", (e) => {
   if (e.key === "p") { gameState.running = !gameState.running; return; }
@@ -123,13 +117,11 @@ window.addEventListener("keydown", (e) => {
 });
 window.addEventListener("keyup", (e)=>{ keys[e.key]=false; });
 
-/* ---------------- UPDATE ---------------- */
 function update(){
   if (!gameState.running) return;
   const elapsed = Math.floor((Date.now()-gameState.startTime)/1000);
   let baseSpeed = 12 + Math.floor(elapsed/5) * 5;
 
-  // kalau slow masih aktif
   if (Date.now() < gameState.slowTimer) {
     gameState.speed = Math.max(3, baseSpeed - gameState.slowEffect);
   } else {
@@ -155,7 +147,6 @@ function update(){
   if (keys["ArrowLeft"]) { photon.polarization=normalizeAngle(photon.polarization-photon.rotateStep); keys["ArrowLeft"]=false; }
   if (keys["ArrowRight"]) { photon.polarization=normalizeAngle(photon.polarization+photon.rotateStep); keys["ArrowRight"]=false; }
 
-  // Polarizer collision
   for (let ob of gameState.obstacles){
     if (photon.lane===ob.lane && !ob.used && photon.x+photon.radius>ob.x && photon.x-photon.radius<ob.x+ob.width){
       const diff = angleDiff(photon.polarization, ob.targetAngle);
@@ -173,24 +164,22 @@ function update(){
     }
   }
 
-  // Powerups
   for (let p of gameState.powerups){
     if (photon.lane===p.lane && Math.abs(photon.x-p.x)<30){
       if (p.type==="heart" && gameState.lives<3) gameState.lives++;
       if (p.type==="shield") gameState.shield=true;
       if (p.type==="slow") {
-        gameState.slowEffect = 5;              // easy: kurangi 3 speed
-        gameState.slowTimer = Date.now() + 10000; // efek bertahan 6 detik
+        gameState.slowEffect = 5;  
+        gameState.slowTimer = Date.now() + 10000; 
       }
       if (p.type==="fragment") {
       gameState.fragments++;
-      localStorage.setItem("fragments", gameState.fragments); // simpan progress
+      localStorage.setItem("fragments", gameState.fragments);
 
-      // ⬇️ cek kalau sudah 100
       if (gameState.fragments >= 100) {
           gameState.fragments = 100;
           localStorage.setItem("f ragments", 100);
-          showEnding(); // panggil popup ending
+          showEnding();
         }
       }
       p.x=-999;
@@ -204,12 +193,10 @@ function update(){
   shieldStatusEl.textContent = "Shield: " + (gameState.shield ? "ON" : "OFF");
 }
 
-/* ---------------- RENDER ---------------- */
 function render(){
   laneHeight = canvas.height / laneCount;
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // background lane
   ctx.globalAlpha=0.1;
   for (let i=0;i<laneCount;i++){
     ctx.fillStyle = i%2? "#111":"#222";
@@ -217,7 +204,6 @@ function render(){
   }
   ctx.globalAlpha=1;
 
-  // polarizer
 for (let ob of gameState.obstacles){
     ctx.save();
     ctx.translate(ob.x+ob.width/2, ob.y+ob.height/2);
@@ -227,7 +213,7 @@ for (let ob of gameState.obstacles){
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(-ob.width/2, 0);   // dari kiri ke kanan
+    ctx.moveTo(-ob.width/2, 0);
     ctx.lineTo(ob.width/2, 0);
     ctx.beginPath();
     ctx.moveTo(ob.width/2 - 10, -5);
@@ -236,7 +222,6 @@ for (let ob of gameState.obstacles){
     ctx.stroke();
     ctx.restore();
   }
-  // powerups
 for (let p of gameState.powerups){
   let img = null;
 
@@ -254,7 +239,6 @@ for (let p of gameState.powerups){
       p.size
     );
   } else {
-    // fallback kalau icon belum ke-load
     ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size/2, 0, Math.PI*2);
@@ -262,22 +246,19 @@ for (let p of gameState.powerups){
   }
 }
 
-  // === Lumo UFO ===
   ctx.save();
-  const floatY = Math.sin(Date.now()/300) * 3; // efek goyang
+  const floatY = Math.sin(Date.now()/300) * 3;
   ctx.translate(photon.x, photon.y + floatY);
   ctx.rotate(degToRad(photon.polarization));
 
-  // gambar UFO
   ctx.drawImage(
     lumoImg,
-    -photon.radius*2,   // geser kiri biar pusat pas
-    -photon.radius*2,   // geser atas biar pusat pas
-    photon.radius*4,    // lebar
-    photon.radius*4     // tinggi
+    -photon.radius*2, 
+    -photon.radius*2, 
+    photon.radius*4,   
+    photon.radius*4 
   );
 
-  // indikator arah (garis putih tipis)
   ctx.strokeStyle = "white";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -288,21 +269,17 @@ for (let p of gameState.powerups){
   ctx.restore();
 }
 
-
-/* ---------------- LOOP ---------------- */
 function loop(){
   update();
   render();
   requestAnimationFrame(loop);
 }
 
-/* ---------------- GAME OVER ---------------- */
 function gameOver(){
   gameState.running=false;
   document.getElementById("gameOverScreen").style.display="block";
 }
 
-/* ---------------- RESET ---------------- */
 function resetGame(){
   const savedFragments = parseInt(localStorage.getItem("fragments")) || 0;
 
@@ -310,7 +287,7 @@ function resetGame(){
     running:true,
     score:0,
     speed:5,
-    fragments:savedFragments,   // ambil dari localStorage
+    fragments:savedFragments,
     spawnTimer:0,
     spawnInterval:160,
     obstacles:[],

@@ -8,12 +8,11 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-// Buat bintang
 let stars = Array.from({length: 150}, () => ({
   x: Math.random() * canvas.width,
   y: Math.random() * canvas.height,
   r: Math.random() * 2,
-  speed: 1 + Math.random() * 2 // lebih halus
+  speed: 1 + Math.random() * 2 
 }));
 
 function animate() {
@@ -25,11 +24,8 @@ function animate() {
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.fill();
-
-    // Gerak kanan → kiri
     s.x -= s.speed;
 
-    // Kalau keluar kiri → respawn di kanan
     if (s.x < -2) {
       s.x = canvas.width + 2;
       s.y = Math.random() * canvas.height;
